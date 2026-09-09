@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { STAGES } from '@/lib/leads';
 import './dashboard.css';
@@ -48,9 +48,22 @@ function defaultDatetimeInput() {
   return formatDateForInput(d);
 }
 
+// ---- NEW: Small component to handle the calendar=success query param ----
+function CalendarSuccessHandler({ onSuccess }) {
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('calendar') === 'success') {
+      onSuccess();
+    }
+  }, [searchParams, onSuccess]);
+
+  return null;
+}
+// ----------------------------------------------------------
+
 export default function Dashboard() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [theme, setTheme] = useState('dark');
   const [user, setUser] = useState(null);
@@ -170,15 +183,14 @@ export default function Dashboard() {
     })();
   }, [router]);
 
-  useEffect(() => {
-    if (searchParams.get('calendar') === 'success') {
-      showToast('Google Calendar connected successfully!', 'success');
-      const url = new URL(window.location.href);
-      url.searchParams.delete('calendar');
-      window.history.replaceState({}, '', url.toString());
-      checkCalendarStatus();
-    }
-  }, [searchParams, showToast]);
+  // ---- Calendar success handler ----
+  const handleCalendarSuccess = useCallback(() => {
+    showToast('Google Calendar connected successfully!', 'success');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('calendar');
+    window.history.replaceState({}, '', url.toString());
+    checkCalendarStatus();
+  }, [showToast]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -480,7 +492,7 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // ---- NEW: Sync to Calendar handler ----
+  // ---- Sync to Calendar handler ----
   async function syncToCalendar(uniqueId) {
     setLoading(true);
     try {
@@ -785,7 +797,6 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                {/* Google Calendar section with status badge */}
                 <div style={{ marginTop: 25, paddingTop: 20, borderTop: '1px solid var(--border-color)' }}>
                   <h4 style={{ marginBottom: 12 }}>📅 Google Calendar</h4>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
@@ -942,7 +953,6 @@ export default function Dashboard() {
                                 <button className="action-btn btn-schedule" onClick={() => openSchedule(lead.uniqueId)} title="Schedule">
                                   <i className="fas fa-calendar" />
                                 </button>
-                                {/* NEW Sync to Calendar button */}
                                 <button className="action-btn btn-sync" onClick={() => syncToCalendar(lead.uniqueId)} title="Sync to Calendar">
                                   <i className="fas fa-calendar-plus" />
                                 </button>
@@ -1432,6 +1442,11 @@ export default function Dashboard() {
         </div>
       )}
       {toast && <div className={`toast show ${toast.type}`}>{toast.type === 'success' ? '✅ ' : '❌ '}{toast.message}</div>}
+
+      {/* ---- Wrap Calendar success handler in Suspense ---- */}
+      <Suspense fallback={null}>
+        <CalendarSuccessHandler onSuccess={handleCalendarSuccess} />
+      </Suspense>
     </div>
   );
 }
