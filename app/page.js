@@ -730,7 +730,7 @@ export default function Dashboard() {
                           ? 'My Profile'
                           : 'Add New Lead'}
               </h1>
-              <p>Welcome back, {user.name}!</p>
+              <p>Welcome back, {user.name}! (v1.1)</p>
             </div>
           </div>
 
