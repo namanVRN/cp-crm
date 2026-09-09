@@ -13,8 +13,12 @@ export async function GET(request) {
   const authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
-    scope: ['https://www.googleapis.com/auth/calendar'],
-    state: cpNumber, 
+    scope: [
+      'https://www.googleapis.com/auth/calendar.events',
+      'openid',                                     // ← needed for ID token
+      'https://www.googleapis.com/auth/userinfo.email', // ← needed for userinfo
+    ],
+    state: cpNumber,
   });
 
   return NextResponse.redirect(authUrl);

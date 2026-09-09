@@ -35,6 +35,7 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: 'Unauthorized!' }, { status: 403 });
     }
 
+    // ---- Update the lead sheet (no calendar event) ----
     const oldFollowDate = row[10] || 'None';
     const existingRemark = row[12] || '';
     const timestamp = formatNowSheet();
@@ -43,26 +44,42 @@ export async function POST(request, { params }) {
       : existingRemark;
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId: ssid, range: `FMS!K${rowNum}`, valueInputOption: 'RAW',
+      spreadsheetId: ssid,
+      range: `FMS!K${rowNum}`,
+      valueInputOption: 'RAW',
       requestBody: { values: [[validDateTime]] },
     });
     await sheets.spreadsheets.values.update({
-      spreadsheetId: ssid, range: `FMS!M${rowNum}`, valueInputOption: 'RAW',
+      spreadsheetId: ssid,
+      range: `FMS!M${rowNum}`,
+      valueInputOption: 'RAW',
       requestBody: { values: [[newRemarkText]] },
     });
     await sheets.spreadsheets.values.update({
-      spreadsheetId: ssid, range: `FMS!O${rowNum}`, valueInputOption: 'RAW',
+      spreadsheetId: ssid,
+      range: `FMS!O${rowNum}`,
+      valueInputOption: 'RAW',
       requestBody: { values: [[timestamp]] },
     });
 
     await logActivity(sheets, ssid, {
-      leadId: id, action: 'Follow-up Scheduled', doerName: session.name, doerRole: session.role,
-      oldStage: row[9] || '', newStage: row[9] || '', oldFollowUp: oldFollowDate, newFollowUp: validDateTime,
-      customerInfo: row[1] || '', remark: cleanRemark || '',
+      leadId: id,
+      action: 'Follow-up Scheduled',
+      doerName: session.name,
+      doerRole: session.role,
+      oldStage: row[9] || '',
+      newStage: row[9] || '',
+      oldFollowUp: oldFollowDate,
+      newFollowUp: validDateTime,
+      customerInfo: row[1] || '',
+      remark: cleanRemark || '',
     });
 
     return NextResponse.json({ success: true, message: 'Follow-up scheduled!' });
   } catch (error) {
-    return NextResponse.json({ success: false, message: error.message || String(error) }, { status: error.status || 500 });
+    return NextResponse.json(
+      { success: false, message: error.message || String(error) },
+      { status: error.status || 500 }
+    );
   }
 }

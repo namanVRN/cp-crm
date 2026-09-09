@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { STAGES } from '@/lib/leads';
 import './dashboard.css';
 
@@ -50,6 +50,8 @@ function defaultDatetimeInput() {
 
 export default function Dashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [theme, setTheme] = useState('dark');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -57,8 +59,8 @@ export default function Dashboard() {
   const [page, setPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // NEW: profile email state
   const [profileEmail, setProfileEmail] = useState('');
+  const [calendarConnected, setCalendarConnected] = useState(false);
 
   const [stats, setStats] = useState({
     totalLeads: 0,
@@ -80,7 +82,6 @@ export default function Dashboard() {
 
   const [projects, setProjects] = useState([]);
 
-  // Lead assignment (Admin)
   const [cpList, setCpList] = useState([]);
   const [dbLeads, setDbLeads] = useState([]);
   const [selectedDbIds, setSelectedDbIds] = useState([]);
@@ -88,12 +89,10 @@ export default function Dashboard() {
   const [assignStage, setAssignStage] = useState('');
   const [assignRemark, setAssignRemark] = useState('');
 
-  // Manage Users (Admin)
   const [users, setUsers] = useState([]);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', userNumber: '', role: 'CP', password: '', email: '' });
 
-  // Add lead form
   const [newLead, setNewLead] = useState({
     customerName: '',
     customerNumber: '',
@@ -107,16 +106,13 @@ export default function Dashboard() {
   });
   const [newLeadErrors, setNewLeadErrors] = useState({});
 
-  // View modal
   const [viewLead, setViewLead] = useState(null);
-  // Update modal
-  const [updateModal, setUpdateModal] = useState(null); // { uniqueId, currentStage }
+  const [updateModal, setUpdateModal] = useState(null);
   const [updateSubStatus, setUpdateSubStatus] = useState('');
   const [updateFollowDT, setUpdateFollowDT] = useState('');
   const [updateProject, setUpdateProject] = useState('');
   const [updateRemark, setUpdateRemark] = useState('');
-  // Schedule modal
-  const [scheduleModal, setScheduleModal] = useState(null); // { uniqueId }
+  const [scheduleModal, setScheduleModal] = useState(null);
   const [scheduleDT, setScheduleDT] = useState('');
   const [scheduleRemark, setScheduleRemark] = useState('');
 
@@ -142,7 +138,6 @@ export default function Dashboard() {
     [router]
   );
 
-  // Theme
   useEffect(() => {
     let saved = 'dark';
     try {
@@ -158,7 +153,6 @@ export default function Dashboard() {
     } catch {}
   }
 
-  // Load user
   useEffect(() => {
     (async () => {
       try {
@@ -169,12 +163,22 @@ export default function Dashboard() {
         }
         const data = await res.json();
         setUser(data);
-        setProfileEmail(data.email || ''); // NEW
+        setProfileEmail(data.email || '');
       } catch {
         router.push('/login');
       }
     })();
   }, [router]);
+
+  useEffect(() => {
+    if (searchParams.get('calendar') === 'success') {
+      showToast('Google Calendar connected successfully!', 'success');
+      const url = new URL(window.location.href);
+      url.searchParams.delete('calendar');
+      window.history.replaceState({}, '', url.toString());
+      checkCalendarStatus();
+    }
+  }, [searchParams, showToast]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -244,12 +248,26 @@ export default function Dashboard() {
     setLoading(false);
   }, [apiFetch, showToast]);
 
+  const checkCalendarStatus = useCallback(async () => {
+    if (!user?.userNumber) return;
+    try {
+      const res = await fetch('/api/auth/calendar/status');
+      if (res.ok) {
+        const data = await res.json();
+        setCalendarConnected(data.connected || false);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
     loadStats();
     loadProjects();
     if (user.role === 'Admin') loadDbLeads();
-  }, [user, loadStats, loadProjects, loadDbLeads]);
+    checkCalendarStatus();
+  }, [user, loadStats, loadProjects, loadDbLeads, checkCalendarStatus]);
 
   async function goTo(target) {
     setSidebarOpen(false);
@@ -290,12 +308,12 @@ export default function Dashboard() {
       loadUsers();
     }
 
-    // NEW: Profile page load (refresh email from sheet)
     if (target === 'profile') {
       try {
         const data = await apiFetch('/api/auth/me');
         setUser(data);
         setProfileEmail(data.email || '');
+        await checkCalendarStatus();
       } catch (e) {
         showToast(e.message);
       }
@@ -329,11 +347,9 @@ export default function Dashboard() {
     }, 300);
   }
 
-  // Pagination
   const totalPages = Math.max(1, Math.ceil(allLeads.length / PAGE_SIZE));
   const pageLeads = allLeads.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  // Add lead
   async function submitNewLead() {
     const errs = {};
     if (!newLead.customerName.trim()) errs.customerName = true;
@@ -355,7 +371,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // View lead
   async function openView(uniqueId) {
     setLoading(true);
     try {
@@ -367,7 +382,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // Update modal
   function openUpdate(uniqueId, currentStage) {
     setUpdateModal({ uniqueId, currentStage });
     setUpdateSubStatus('');
@@ -388,7 +402,7 @@ export default function Dashboard() {
       if (stage === 'Follow Up 2') return 'Deal Won';
       return stage;
     }
-    return stage; // Under Follow-up
+    return stage;
   }
 
   async function submitUpdate() {
@@ -422,7 +436,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // Schedule modal
   function openSchedule(uniqueId) {
     setScheduleModal({ uniqueId });
     setScheduleDT(defaultDatetimeInput());
@@ -467,7 +480,20 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // Lead assignment (Admin)
+  // ---- NEW: Sync to Calendar handler ----
+  async function syncToCalendar(uniqueId) {
+    setLoading(true);
+    try {
+      const data = await apiFetch('/api/leads/' + encodeURIComponent(uniqueId) + '/sync-calendar', {
+        method: 'POST',
+      });
+      showToast(data.message, 'success');
+    } catch (e) {
+      showToast(e.message);
+    }
+    setLoading(false);
+  }
+
   function toggleDbSelect(uniqueId) {
     setSelectedDbIds((prev) => {
       const next = prev.includes(uniqueId) ? prev.filter((id) => id !== uniqueId) : [...prev, uniqueId];
@@ -520,7 +546,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // Manage Users (Admin)
   function openAddUserModal() {
     setNewUser({ name: '', userNumber: '', role: 'CP', password: '', email: '' });
     setShowAddUserModal(true);
@@ -580,7 +605,6 @@ export default function Dashboard() {
     setLoading(false);
   }
 
-  // NEW: Save profile email to sheet via PUT /api/auth/me
   async function saveProfileEmail() {
     const email = String(profileEmail || '').trim();
 
@@ -600,7 +624,6 @@ export default function Dashboard() {
         body: JSON.stringify({ email }),
       });
 
-      // keep local user updated
       setUser((u) => ({ ...(u || {}), email: data.email }));
       showToast('Email saved successfully!', 'success');
     } catch (e) {
@@ -608,6 +631,14 @@ export default function Dashboard() {
     }
     setLoading(false);
   }
+
+  const handleConnectCalendar = () => {
+    if (!user?.userNumber) {
+      showToast('User number not found. Please log in again.');
+      return;
+    }
+    window.location.href = `/api/auth/calendar?cpNumber=${user.userNumber}`;
+  };
 
   async function logout() {
     if (!window.confirm('Are you sure you want to logout?')) return;
@@ -647,7 +678,6 @@ export default function Dashboard() {
             <span>Add New Lead</span>
           </div>
 
-          {/* NEW: Profile */}
           <div className={`nav-item ${page === 'profile' ? 'active' : ''}`} onClick={() => goTo('profile')}>
             <i className="fas fa-id-card" />
             <span>My Profile</span>
@@ -722,7 +752,7 @@ export default function Dashboard() {
         </div>
 
         <div className="content-area">
-          {/* NEW: PROFILE PAGE */}
+          {/* PROFILE PAGE */}
           {page === 'profile' && (
             <div className="table-container">
               <div className="table-header">
@@ -752,6 +782,22 @@ export default function Dashboard() {
                   />
                   <p style={{ fontSize: 12, opacity: 0.8, marginTop: 8 }}>
                     This email will be saved in the <b>Users</b> sheet (column E) and later used for Google Calendar invites.
+                  </p>
+                </div>
+
+                {/* Google Calendar section with status badge */}
+                <div style={{ marginTop: 25, paddingTop: 20, borderTop: '1px solid var(--border-color)' }}>
+                  <h4 style={{ marginBottom: 12 }}>📅 Google Calendar</h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 15, flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" onClick={handleConnectCalendar}>
+                      <i className="fas fa-google" /> Connect Google Calendar
+                    </button>
+                    <span className={`calendar-status-badge ${calendarConnected ? 'connected' : 'disconnected'}`}>
+                      {calendarConnected ? '✅ Connected' : '❌ Not connected'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 13, opacity: 0.8, marginTop: 8 }}>
+                    Click to authorize this app to create events in your Google Calendar.
                   </p>
                 </div>
 
@@ -895,6 +941,10 @@ export default function Dashboard() {
                                 </button>
                                 <button className="action-btn btn-schedule" onClick={() => openSchedule(lead.uniqueId)} title="Schedule">
                                   <i className="fas fa-calendar" />
+                                </button>
+                                {/* NEW Sync to Calendar button */}
+                                <button className="action-btn btn-sync" onClick={() => syncToCalendar(lead.uniqueId)} title="Sync to Calendar">
+                                  <i className="fas fa-calendar-plus" />
                                 </button>
                                 {lead.currentStage !== 'New Lead' && (
                                   <button className="action-btn btn-back" onClick={() => moveBack(lead.uniqueId)} title="Move Back">
@@ -1194,17 +1244,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VIEW MODAL */}
+      {/* MODALS - unchanged */}
       {viewLead && (
         <div className="modal-overlay active" onClick={(e) => e.target === e.currentTarget && setViewLead(null)}>
           <div className="modal">
             <div className="modal-header">
               <h2>📋 Lead Details</h2>
-              <button className="modal-close" onClick={() => setViewLead(null)}>
-                ×
-              </button>
+              <button className="modal-close" onClick={() => setViewLead(null)}>×</button>
             </div>
-
             <div className="modal-body">
               <div className="lead-detail">
                 {[
@@ -1228,12 +1275,9 @@ export default function Dashboard() {
                 ))}
                 <div className="detail-item detail-full">
                   <label>Current Stage</label>
-                  <p>
-                    <span className={`stage-badge ${getStageClass(viewLead.currentStage)}`}>{viewLead.currentStage}</span>
-                  </p>
+                  <p><span className={`stage-badge ${getStageClass(viewLead.currentStage)}`}>{viewLead.currentStage}</span></p>
                 </div>
               </div>
-
               {viewLead.remark && (
                 <div className="timeline">
                   <h4>📝 Activity Log</h4>
@@ -1241,20 +1285,10 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setViewLead(null)}>
-                Close
-              </button>
+              <button className="btn btn-secondary" onClick={() => setViewLead(null)}>Close</button>
               {viewLead.currentStage !== 'Deal Won' && viewLead.currentStage !== 'Deal Lost' && (
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    const l = viewLead;
-                    setViewLead(null);
-                    openUpdate(l.uniqueId, l.currentStage);
-                  }}
-                >
+                <button className="btn btn-primary" onClick={() => { const l = viewLead; setViewLead(null); openUpdate(l.uniqueId, l.currentStage); }}>
                   <i className="fas fa-arrow-right" /> Update Lead
                 </button>
               )}
@@ -1263,154 +1297,111 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* UPDATE MODAL */}
       {updateModal && (
         <div className="modal-overlay active" onClick={(e) => e.target === e.currentTarget && setUpdateModal(null)}>
           <div className="modal">
             <div className="modal-header">
               <h2>🔄 Update Lead</h2>
-              <button className="modal-close" onClick={() => setUpdateModal(null)}>
-                ×
-              </button>
+              <button className="modal-close" onClick={() => setUpdateModal(null)}>×</button>
             </div>
-
             <div className="modal-body">
               <div className="form-group">
                 <label>Lead ID</label>
                 <input value={updateModal.uniqueId} readOnly style={{ opacity: 0.6 }} />
               </div>
-
               <div className="form-group">
                 <label>Current Stage</label>
-                <p style={{ marginTop: 6 }}>
-                  <span className={`stage-badge ${getStageClass(updateModal.currentStage)}`}>{updateModal.currentStage}</span>
-                </p>
+                <p style={{ marginTop: 6 }}><span className={`stage-badge ${getStageClass(updateModal.currentStage)}`}>{updateModal.currentStage}</span></p>
               </div>
-
               <div className="next-stage-preview">
                 <label>{updateSubStatus === 'Under Follow-up' ? 'Stage stays at' : 'Lead will move to'}</label>
                 <p>{nextStagePreview(updateModal.currentStage, updateSubStatus)}</p>
               </div>
-
-              <div className="form-group">
-                <label>Sub-Status *</label>
-              </div>
-
+              <div className="form-group"><label>Sub-Status *</label></div>
               <div className="sub-status-selector">
                 {[
                   ['Done', '✅', 'sub-done-opt', 'Move to next stage'],
                   ['Under Follow-up', '🔄', 'sub-followup-opt', 'Stay on same stage'],
                   ['Not Interested', '❌', 'sub-notint-opt', 'Drop this lead'],
                 ].map(([val, icon, cls, desc]) => (
-                  <div
-                    key={val}
-                    className={`sub-status-option ${cls} ${updateSubStatus === val ? 'selected' : ''}`}
-                    onClick={() => setUpdateSubStatus(val)}
-                  >
+                  <div key={val} className={`sub-status-option ${cls} ${updateSubStatus === val ? 'selected' : ''}`} onClick={() => setUpdateSubStatus(val)}>
                     <div className="sub-icon">{icon}</div>
                     <div className="sub-label">{val}</div>
                     <div className="sub-desc">{desc}</div>
                   </div>
                 ))}
               </div>
-
               <div className="form-group">
                 <label>Next Follow-up Date & Time *</label>
                 <input type="datetime-local" value={updateFollowDT} onChange={(e) => setUpdateFollowDT(e.target.value)} />
               </div>
-
               <div className="form-group">
                 <label>Project</label>
                 <select value={updateProject} onChange={(e) => setUpdateProject(e.target.value)}>
                   <option value="">Select Project</option>
                   {projects.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
+                    <option key={p} value={p}>{p}</option>
                   ))}
                 </select>
               </div>
-
               <div className="form-group">
                 <label>Remark</label>
                 <textarea value={updateRemark} onChange={(e) => setUpdateRemark(e.target.value)} maxLength={1000} />
               </div>
             </div>
-
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setUpdateModal(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={submitUpdate}>
-                <i className="fas fa-check" /> Update Lead
-              </button>
+              <button className="btn btn-secondary" onClick={() => setUpdateModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={submitUpdate}><i className="fas fa-check" /> Update Lead</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* SCHEDULE MODAL */}
       {scheduleModal && (
         <div className="modal-overlay active" onClick={(e) => e.target === e.currentTarget && setScheduleModal(null)}>
           <div className="modal">
             <div className="modal-header">
               <h2>📅 Schedule Follow-up</h2>
-              <button className="modal-close" onClick={() => setScheduleModal(null)}>
-                ×
-              </button>
+              <button className="modal-close" onClick={() => setScheduleModal(null)}>×</button>
             </div>
-
             <div className="modal-body">
               <div className="form-group">
                 <label>Lead ID</label>
                 <input value={scheduleModal.uniqueId} readOnly style={{ opacity: 0.6 }} />
               </div>
-
               <div className="form-group">
                 <label>Follow-up Date & Time *</label>
                 <input type="datetime-local" value={scheduleDT} onChange={(e) => setScheduleDT(e.target.value)} />
               </div>
-
               <div className="form-group">
                 <label>Remark</label>
                 <textarea value={scheduleRemark} onChange={(e) => setScheduleRemark(e.target.value)} maxLength={1000} />
               </div>
             </div>
-
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setScheduleModal(null)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={submitSchedule}>
-                <i className="fas fa-calendar-check" /> Schedule
-              </button>
+              <button className="btn btn-secondary" onClick={() => setScheduleModal(null)}>Cancel</button>
+              <button className="btn btn-primary" onClick={submitSchedule}><i className="fas fa-calendar-check" /> Schedule</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ADD USER MODAL */}
       {showAddUserModal && (
         <div className="modal-overlay active" onClick={(e) => e.target === e.currentTarget && setShowAddUserModal(false)}>
           <div className="modal">
             <div className="modal-header">
               <h2>👤 Add New User</h2>
-              <button className="modal-close" onClick={() => setShowAddUserModal(false)}>
-                ×
-              </button>
+              <button className="modal-close" onClick={() => setShowAddUserModal(false)}>×</button>
             </div>
-
             <div className="modal-body">
               <div className="form-group">
                 <label>Name *</label>
                 <input value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} maxLength={100} />
               </div>
-
               <div className="form-group">
                 <label>User Number *</label>
                 <input value={newUser.userNumber} onChange={(e) => setNewUser({ ...newUser, userNumber: e.target.value })} maxLength={20} />
               </div>
-
               <div className="form-group">
                 <label>Role *</label>
                 <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
@@ -1418,30 +1409,18 @@ export default function Dashboard() {
                   <option value="Admin">Admin</option>
                 </select>
               </div>
-
               <div className="form-group">
                 <label>Email (for Calendar invites)</label>
                 <input type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} maxLength={150} />
               </div>
-
               <div className="form-group">
                 <label>Password *</label>
-                <input
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  maxLength={100}
-                  placeholder="Min 4 characters"
-                />
+                <input value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} maxLength={100} placeholder="Min 4 characters" />
               </div>
             </div>
-
             <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowAddUserModal(false)}>
-                Cancel
-              </button>
-              <button className="btn btn-primary" onClick={submitAddUser}>
-                <i className="fas fa-save" /> Save User
-              </button>
+              <button className="btn btn-secondary" onClick={() => setShowAddUserModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={submitAddUser}><i className="fas fa-save" /> Save User</button>
             </div>
           </div>
         </div>
