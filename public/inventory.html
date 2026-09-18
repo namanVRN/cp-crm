@@ -145,7 +145,7 @@
     /* ---------- Project cards (overview) ---------- */
     .projects{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
       gap:14px;
     }
     .project-card{
@@ -153,6 +153,9 @@
       border:1px solid var(--line);
       border-left:4px solid var(--brick);
       padding:16px 18px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
     }
     .project-card h3{font-size:16px; margin-bottom:2px;}
     .project-card .loc{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
@@ -295,7 +298,7 @@
       font-size:13px;
     }
 
-    /* ---------- Project Info page ---------- */
+    /* ---------- Project Info page & Media ---------- */
     .project-picker{
       display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px;
     }
@@ -331,26 +334,83 @@
     .quick-facts .fact .k{font-size:11px; color:var(--ink-soft); margin-bottom:4px;}
     .quick-facts .fact .v{font-size:14px; font-weight:600;}
 
+    /* Media Buttons and Video Player */
+    .media-actions {
+      display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px;
+    }
+    .btn-media {
+      display:inline-flex; align-items:center; gap:8px;
+      font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+      padding:10px 16px; border-radius:var(--radius);
+      text-decoration:none; border:1px solid var(--line); cursor:pointer;
+    }
+    .btn-brochure { background:var(--brick); color:#fff; border-color:var(--brick); }
+    .btn-brochure:hover { background:var(--brick-deep); }
+    .btn-video { background:var(--surface); color:var(--ink); }
+    .btn-video:hover { border-color:var(--ink); }
+    
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 20px;
+      margin-bottom: 34px;
+    }
+    .video-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 12px;
+    }
+    .video-card-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .video-wrap iframe {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+    .video-hover-hint {
+      position: absolute;
+      z-index: 2;
+      left: 10px;
+      bottom: 10px;
+      background: rgba(24, 34, 52, 0.85);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 2px;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .video-wrap:hover .video-hover-hint {
+      opacity: 0;
+    }
+
     .amenity-grid{
-      display:flex; flex-wrap:wrap; gap:8px;
-      margin-bottom:34px;
+      display:flex; flex-wrap:wrap; gap:8px; margin-bottom:34px;
     }
     .amenity-chip{
-      background:var(--surface);
-      border:1px solid var(--line);
-      border-left:3px solid var(--green);
-      padding:8px 14px;
-      font-size:13px;
-      font-weight:500;
+      background:var(--surface); border:1px solid var(--line);
+      border-left:3px solid var(--green); padding:8px 14px;
+      font-size:13px; font-weight:500;
     }
 
     .landmarks-table{
-      width:100%;
-      border-collapse:collapse;
-      background:var(--surface);
-      border:1px solid var(--line);
-      margin-bottom:34px;
-      font-size:13px;
+      width:100%; border-collapse:collapse; background:var(--surface);
+      border:1px solid var(--line); margin-bottom:34px; font-size:13px;
     }
     .landmarks-table th{
       text-align:left; background:var(--paper-deep); font-weight:600;
@@ -361,19 +421,15 @@
 
     .fab-list{display:flex; flex-direction:column; gap:12px;}
     .fab-card{
-      background:var(--surface);
-      border:1px solid var(--line);
-      border-left:4px solid var(--line);
-      padding:16px 20px;
+      background:var(--surface); border:1px solid var(--line);
+      border-left:4px solid var(--line); padding:16px 20px;
     }
     .fab-card.top3{border-left-color:var(--brick);}
     .fab-card .fab-top{
-      display:flex; justify-content:space-between; align-items:baseline; gap:10px;
-      margin-bottom:8px;
+      display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px;
     }
     .fab-card h4{
-      font-family:'Source Serif 4',serif;
-      font-size:16px; font-weight:600; margin:0;
+      font-family:'Source Serif 4',serif; font-size:16px; font-weight:600; margin:0;
     }
     .fab-card .advantage{
       font-size:13px; color:var(--brick-deep); font-weight:600; margin-bottom:8px;
@@ -390,28 +446,19 @@
 
     /* ---------- Unit detail modal ---------- */
     .modal-overlay{
-      display:none;
-      position:fixed; inset:0;
-      background:rgba(24,34,52,.45);
-      z-index:100;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
+      display:none; position:fixed; inset:0;
+      background:rgba(24,34,52,.45); z-index:100;
+      align-items:center; justify-content:center; padding:20px;
     }
     .modal-overlay.open{display:flex;}
     .modal-box{
-      background:var(--surface);
-      border:1px solid var(--line);
-      max-width:560px;
-      width:100%;
-      max-height:85vh;
-      overflow-y:auto;
+      background:var(--surface); border:1px solid var(--line);
+      max-width:560px; width:100%; max-height:85vh; overflow-y:auto;
       box-shadow:0 12px 40px rgba(24,34,52,.25);
     }
     .modal-head{
       display:flex; justify-content:space-between; align-items:center;
-      padding:16px 20px;
-      border-bottom:2px solid var(--ink);
+      padding:16px 20px; border-bottom:2px solid var(--ink);
       position:sticky; top:0; background:var(--surface);
     }
     .modal-head h3{font-size:18px;}
@@ -424,9 +471,7 @@
     .modal-body{padding:14px 20px 20px;}
     .modal-row{
       display:flex; justify-content:space-between; gap:16px;
-      padding:9px 0;
-      border-bottom:1px solid var(--paper-deep);
-      font-size:13.5px;
+      padding:9px 0; border-bottom:1px solid var(--paper-deep); font-size:13.5px;
     }
     .modal-row:last-child{border-bottom:none;}
     .modal-row .mk{color:var(--ink-soft); flex:0 0 46%;}
@@ -438,6 +483,7 @@
     @media (max-width:640px){
       .kpis{grid-template-columns:repeat(2,1fr);}
       .wrap{padding:18px 14px 40px;}
+      .video-grid { grid-template-columns: 1fr; }
     }
   </style>
 
@@ -591,6 +637,63 @@
     var num = u.rate ? u.rate.toLocaleString('en-IN') : m[0];
     return [before, num, after].filter(Boolean).join(' ');
   }
+
+  /* ---------------- URL Link Processors ---------------- */
+  function toDriveDownloadUrl(url) {
+    if (!url) return '';
+    var s = String(url).trim();
+    if (/export=download|uc\?export=download/i.test(s)) return s;
+    var m = s.match(/\/file\/d\/([^/]+)/);
+    if (m) return 'https://drive.google.com/uc?export=download&id=' + m[1];
+    m = s.match(/[?&]id=([^&]+)/);
+    if (m) return 'https://drive.google.com/uc?export=download&id=' + m[1];
+    return s;
+  }
+
+  function toYouTubeEmbedUrl(url, autoplay) {
+    if (!url) return '';
+    var s = String(url).trim();
+    var id = '';
+
+    if (/youtube\.com\/embed\//i.test(s)) {
+      var em = s.match(/embed\/([^?&/]+)/i);
+      if (em) id = em[1];
+    } else {
+      var m = s.match(/youtu\.be\/([^?&/]+)/i);
+      if (m) id = m[1];
+      if (!id) {
+        m = s.match(/[?&]v=([^&]+)/i);
+        if (m) id = m[1];
+      }
+      if (!id) {
+        m = s.match(/youtube\.com\/shorts\/([^?&/]+)/i);
+        if (m) id = m[1];
+      }
+    }
+    if (!id) return '';
+    
+    var base = 'https://www.youtube.com/embed/' + id + '?rel=0&modestbranding=1&playsinline=1';
+    if (autoplay) base += '&autoplay=1&mute=1';
+    return base;
+  }
+
+  /* ---------------- Media Hover Events ---------------- */
+  function playProjectVideoOnHover(el) {
+    var iframe = el && el.querySelector('iframe');
+    if (!iframe) return;
+    var raw = el.getAttribute('data-video-url') || '';
+    var src = toYouTubeEmbedUrl(raw, true);
+    if (src) iframe.src = src;
+  }
+
+  function stopProjectVideoOnLeave(el) {
+    var iframe = el && el.querySelector('iframe');
+    if (!iframe) return;
+    var raw = el.getAttribute('data-video-url') || '';
+    var src = toYouTubeEmbedUrl(raw, false);
+    iframe.src = src || '';
+  }
+
 
   /* ================= OVERVIEW PAGE ================= */
 
@@ -770,13 +873,35 @@
     var html = projects.map(function(p){
       var units = allUnits.filter(function(u){ return u.project === p; });
       var pm = projectMaster[p] || {};
+      
+      var brochures = pm.brochures || [];
+      var videos = pm.videos || [];
+
+      // Fallback if data is raw string
+      if (!brochures.length && pm.brochureUrl) brochures = [{ label: 'Brochure', url: pm.brochureUrl }];
+      if (!videos.length && pm.videoUrl) videos = [{ label: 'Walkaround', url: pm.videoUrl }];
+
+      var linksMarkup = '';
+      brochures.forEach(function(b) {
+        var label = b.label ? b.label + ' Brochure ↘' : 'Brochure ↘';
+        linksMarkup += '<a class="maps-link" href="' + esc(toDriveDownloadUrl(b.url)) + '" target="_blank" rel="noopener" style="margin-right:12px;">' + esc(label) + '</a>';
+      });
+
+      videos.forEach(function(v) {
+        var label = v.label ? v.label + ' Video ↗' : 'Video ↗';
+        linksMarkup += '<a class="maps-link" href="' + esc(v.url) + '" target="_blank" rel="noopener" style="margin-right:12px;">' + esc(label) + '</a>';
+      });
+
       return '<div class="project-card">' +
-        '<h3>' + esc(p) + '</h3>' +
-        '<div class="loc">' + esc(pm.location || (units[0] && units[0].location) || '') + '</div>' +
-        (pm.projectType ? '<div class="row"><span class="k">Type</span><span class="v">' + esc(pm.projectType) + '</span></div>' : '') +
-        (pm.landArea ? '<div class="row"><span class="k">Land area</span><span class="v">' + esc(pm.landArea) + '</span></div>' : '') +
-        '<div class="row"><span class="k">Total units</span><span class="v">' + units.length + '</span></div>' +
-        (pm.possession ? '<div class="row"><span class="k">Possession</span><span class="v">' + esc(pm.possession) + '</span></div>' : '') +
+        '<div>' +
+          '<h3>' + esc(p) + '</h3>' +
+          '<div class="loc">' + esc(pm.location || (units[0] && units[0].location) || '') + '</div>' +
+          (pm.projectType ? '<div class="row"><span class="k">Type</span><span class="v">' + esc(pm.projectType) + '</span></div>' : '') +
+          (pm.landArea ? '<div class="row"><span class="k">Land area</span><span class="v">' + esc(pm.landArea) + '</span></div>' : '') +
+          '<div class="row"><span class="k">Total units</span><span class="v">' + units.length + '</span></div>' +
+          (pm.possession ? '<div class="row"><span class="k">Possession</span><span class="v">' + esc(pm.possession) + '</span></div>' : '') +
+        '</div>' +
+        (linksMarkup ? '<div style="margin-top:14px; padding-top:10px; border-top: 1px solid var(--paper-deep); display:flex; flex-wrap:wrap; gap:4px; font-size:12px;">' + linksMarkup + '</div>' : '') +
       '</div>';
     }).join('');
     var cards = document.getElementById('projectCards');
@@ -1182,6 +1307,57 @@
         return '<div class="fact"><div class="k">' + esc(f.label) + '</div><div class="v">' + esc(f.value) + '</div></div>';
       }).join('') + '</div>';
     }
+
+    // Media (Brochure and Videos) rendering handling labeled multiples
+    var brochures = pm.brochures || [];
+    var videos = pm.videos || [];
+
+    // Fallback if structured arrays are not available
+    if (!brochures.length && pm.brochureUrl) brochures = [{ label: '', url: pm.brochureUrl }];
+    if (!videos.length && pm.videoUrl) videos = [{ label: '', url: pm.videoUrl }];
+
+    if (brochures.length || videos.length) {
+      html += '<div class="section-head"><h2>Brochure &amp; Walkthrough</h2></div>';
+      html += '<div class="media-actions">';
+
+      brochures.forEach(function(b) {
+        var dlUrl = toDriveDownloadUrl(b.url);
+        var label = b.label ? 'Download ' + b.label + ' Brochure' : 'Download Brochure';
+        html += '<a class="btn-media btn-brochure" href="' + esc(dlUrl) + '" target="_blank" rel="noopener">' + esc(label) + '</a>';
+      });
+
+      videos.forEach(function(v) {
+        var label = v.label ? 'Open ' + v.label + ' Video' : 'Open Walkthrough Video';
+        html += '<a class="btn-media btn-video" href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(label) + '</a>';
+      });
+
+      html += '</div>';
+
+      // Embedded Hover Players Section
+      var videoGridContent = '';
+      videos.forEach(function(v) {
+        var ytEmbed = toYouTubeEmbedUrl(v.url, false);
+        if (ytEmbed) {
+          var labelText = v.label ? v.label + ' Walkthrough' : 'Project Walkthrough';
+          videoGridContent += '<div class="video-card">' +
+              '<div class="video-card-title">' + esc(labelText) + '</div>' +
+              '<div class="video-wrap" data-video-url="' + esc(v.url) + '" ' +
+                   'onmouseenter="playProjectVideoOnHover(this)" ' +
+                   'onmouseleave="stopProjectVideoOnLeave(this)">' +
+                '<div class="video-hover-hint">Hover to play walkthrough</div>' +
+                '<iframe src="' + esc(ytEmbed) + '" title="' + esc(labelText) + '" ' +
+                  'frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+                  'allowfullscreen loading="lazy"></iframe>' +
+              '</div>' +
+            '</div>';
+        }
+      });
+
+      if (videoGridContent) {
+        html += '<div class="video-grid">' + videoGridContent + '</div>';
+      }
+    }
+
 
     html += '<div class="section-head"><h2>Amenities</h2></div>';
     if (pd.amenities && pd.amenities.length){
