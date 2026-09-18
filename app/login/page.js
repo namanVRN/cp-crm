@@ -66,6 +66,10 @@ export default function LoginPage() {
     }
   }
 
+  function goToInventory() {
+    window.location.href = '/inventory.html';
+  }
+
   if (checkingSession) {
     return (
       <div className="login-body" data-theme={theme}>
@@ -129,6 +133,14 @@ export default function LoginPage() {
 
           <button type="submit" className="login-btn" disabled={loading}>
             {loading ? (<><span className="spinner" /> Signing in...</>) : 'Sign In'}
+          </button>
+
+          <button
+            type="button"
+            className="inventory-btn"
+            onClick={goToInventory}
+          >
+            Inventory
           </button>
         </form>
       </div>
@@ -223,6 +235,19 @@ function LoginStyles() {
       }
       .login-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102,126,234,0.4); }
       .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+      .inventory-btn {
+        width: 100%; padding: 15px; margin-top: 12px;
+        background: transparent;
+        color: var(--text-primary);
+        border: 1px solid var(--input-border);
+        border-radius: 12px; font-size: 16px; font-weight: 600;
+        cursor: pointer; transition: all 0.3s;
+      }
+      .inventory-btn:hover {
+        border-color: var(--primary);
+        background: rgba(102,126,234,0.12);
+        transform: translateY(-2px);
+      }
       .error-msg {
         background: rgba(255,82,82,0.15); border: 1px solid rgba(255,82,82,0.3);
         color: #ff5252; padding: 12px 16px; border-radius: 10px; font-size: 13px; margin-bottom: 20px; text-align: center;

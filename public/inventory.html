@@ -1,0 +1,1233 @@
+<!-- Save this as: public/inventory.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#182234;
+      --ink-soft:#4B5568;
+      --paper:#F1ECE1;
+      --paper-deep:#E7E0D0;
+      --surface:#FFFFFF;
+      --line:#D9D2C1;
+      --brick:#A6503A;
+      --brick-deep:#8A3F2D;
+      --green:#2F7A4D;
+      --green-bg:#E4F0E7;
+      --red:#9C3B3B;
+      --red-bg:#F5E7E4;
+      --amber:#9B7126;
+      --amber-bg:#F3EBD8;
+      --radius: 3px;
+    }
+    *{box-sizing:border-box;}
+    html,body{margin:0;padding:0;}
+    body{
+      background:var(--paper);
+      color:var(--ink);
+      font-family:'Inter',system-ui,sans-serif;
+      font-size:14px;
+      line-height:1.5;
+      -webkit-font-smoothing:antialiased;
+    }
+    h1,h2,h3{
+      font-family:'Source Serif 4', Georgia, serif;
+      font-weight:600;
+      margin:0;
+      color:var(--ink);
+    }
+    .wrap{
+      max-width:1320px;
+      margin:0 auto;
+      padding:28px 28px 64px;
+    }
+
+    /* ---------- Header ---------- */
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      flex-wrap:wrap;
+      gap:16px;
+      border-bottom:2px solid var(--ink);
+      padding-bottom:18px;
+      margin-bottom:16px;
+    }
+    .topbar h1{font-size:28px; letter-spacing:.2px;}
+    .topbar .sub{color:var(--ink-soft); font-size:13px; margin-top:4px;}
+    .topbar-right{display:flex; align-items:center; gap:14px;}
+    .refreshed{font-size:12px; color:var(--ink-soft); text-align:right;}
+    .refreshed span{display:block;}
+    button.refresh{
+      font-family:'Inter',sans-serif;
+      font-size:13px;
+      font-weight:600;
+      background:var(--ink);
+      color:var(--paper);
+      border:none;
+      padding:9px 16px;
+      border-radius:var(--radius);
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      transition:background .15s ease;
+    }
+    button.refresh:hover{background:var(--brick-deep);}
+    button.refresh:disabled{opacity:.6; cursor:default;}
+    .spin{
+      width:12px;height:12px;border-radius:50%;
+      border:2px solid rgba(241,236,225,.4);
+      border-top-color:var(--paper);
+      display:inline-block;
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    /* ---------- Top-level nav ---------- */
+    .nav{
+      display:flex;
+      gap:6px;
+      margin-bottom:26px;
+    }
+    .nav button{
+      font-family:'Inter',sans-serif;
+      font-size:13.5px;
+      font-weight:600;
+      background:transparent;
+      color:var(--ink-soft);
+      border:1px solid var(--line);
+      padding:8px 16px;
+      border-radius:20px;
+      cursor:pointer;
+    }
+    .nav button.active{
+      background:var(--ink);
+      color:var(--paper);
+      border-color:var(--ink);
+    }
+
+    .page{display:none;}
+    .page.active{display:block;}
+
+    /* ---------- KPI strip ---------- */
+    .kpis{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:1px;
+      background:var(--line);
+      border:1px solid var(--line);
+      margin-bottom:30px;
+    }
+    .kpi{
+      background:var(--surface);
+      padding:16px 18px;
+      min-width:0;
+    }
+    .kpi .label{font-size:11.5px; color:var(--ink-soft); margin-bottom:6px;}
+    .kpi .value{font-family:'Source Serif 4',serif; font-size:26px; font-weight:600; line-height:1.1;}
+    .kpi.accent-green .value{color:var(--green);}
+    .kpi.accent-red .value{color:var(--red);}
+    .kpi.accent-amber .value{color:var(--amber);}
+
+    /* ---------- Section headings ---------- */
+    .section-head{
+      display:flex; align-items:baseline; justify-content:space-between;
+      margin:38px 0 14px;
+    }
+    .section-head h2{font-size:19px;}
+    .section-head .note{font-size:12px; color:var(--ink-soft);}
+
+    /* ---------- Project cards (overview) ---------- */
+    .projects{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(270px,1fr));
+      gap:14px;
+    }
+    .project-card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-left:4px solid var(--brick);
+      padding:16px 18px;
+    }
+    .project-card h3{font-size:16px; margin-bottom:2px;}
+    .project-card .loc{font-size:12px; color:var(--ink-soft); margin-bottom:12px;}
+    .project-card .row{
+      display:flex; justify-content:space-between;
+      font-size:13px; padding:4px 0;
+      border-top:1px solid var(--paper-deep);
+    }
+    .project-card .row:first-of-type{border-top:none;}
+    .project-card .row .k{color:var(--ink-soft);}
+    .project-card .row .v{font-weight:600; text-align:right; margin-left:12px;}
+    .project-card .badges{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
+
+    .badge{
+      display:inline-block;
+      font-size:11px;
+      font-weight:600;
+      padding:2px 8px;
+      border-radius:20px;
+      white-space:nowrap;
+    }
+    .badge-available{background:var(--green-bg); color:var(--green);}
+    .badge-sold{background:var(--red-bg); color:var(--red);}
+    .badge-hold{background:var(--amber-bg); color:var(--amber);}
+    .badge-other{background:var(--paper-deep); color:var(--ink-soft);}
+
+    /* ---------- Filters ---------- */
+    .filters{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      background:var(--surface);
+      border:1px solid var(--line);
+      padding:14px 16px;
+    }
+    .filters select, .filters input[type="text"]{
+      font-family:'Inter',sans-serif;
+      font-size:13px;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:var(--paper);
+      color:var(--ink);
+    }
+    .filters input[type="text"]{flex:1 1 220px; min-width:180px;}
+    .filters .clear{
+      font-size:12.5px;
+      color:var(--brick);
+      background:none;
+      border:none;
+      cursor:pointer;
+      font-weight:600;
+      padding:8px 4px;
+    }
+    .filters .btn-pdf{
+      font-family:'Inter',sans-serif;
+      font-size:13px;
+      font-weight:600;
+      background:var(--brick);
+      color:#fff;
+      border:none;
+      padding:9px 16px;
+      border-radius:var(--radius);
+      cursor:pointer;
+      white-space:nowrap;
+      margin-left:auto;
+    }
+    .filters .btn-pdf:hover{background:var(--brick-deep);}
+    .filters .btn-pdf:disabled{opacity:.6; cursor:default;}
+    .result-count{font-size:12.5px; color:var(--ink-soft); margin:10px 2px 0;}
+
+    /* ---------- Table ---------- */
+    .table-scroll{
+      overflow-x:auto;
+      overflow-y:auto;
+      max-height:calc(100vh - 180px);
+      background:var(--surface);
+      border:1px solid var(--line);
+      margin-top:10px;
+    }
+    table{
+      border-collapse:collapse;
+      width:100%;
+      min-width:1080px;
+      font-size:12.8px;
+    }
+    thead th{
+      position:sticky; top:0;
+      z-index:2;
+      background:var(--ink);
+      color:var(--paper);
+      text-align:left;
+      font-weight:600;
+      font-size:11.5px;
+      padding:10px 10px;
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+      box-shadow:0 1px 0 var(--line);
+    }
+    thead th:hover{background:var(--brick-deep);}
+    thead th .arrow{opacity:.6; font-size:10px; margin-left:3px;}
+    tbody td{
+      padding:8px 10px;
+      border-bottom:1px solid var(--paper-deep);
+      white-space:nowrap;
+    }
+    tbody tr{cursor:pointer;}
+    tbody tr:hover{background:var(--paper);}
+    td.num{text-align:right; font-variant-numeric:tabular-nums;}
+    table.hide-block .col-block{display:none;}
+    table.hide-floor .col-floor{display:none;}
+    a.maps-link{color:var(--brick); text-decoration:none; font-weight:600;}
+    a.maps-link:hover{text-decoration:underline;}
+    .yn-yes{color:var(--green); font-weight:600;}
+    .yn-no{color:var(--ink-soft);}
+
+    .empty-state{
+      padding:60px 20px;
+      text-align:center;
+      color:var(--ink-soft);
+    }
+    .empty-state h3{font-size:16px; margin-bottom:6px; color:var(--ink);}
+
+    .loading-screen{
+      min-height:60vh;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:14px; color:var(--ink-soft);
+    }
+    .loading-screen .spin-lg{
+      width:26px;height:26px;border-radius:50%;
+      border:3px solid var(--line);
+      border-top-color:var(--brick);
+      animation:spin .8s linear infinite;
+    }
+    .error-box{
+      background:var(--red-bg); color:#7a2e2e;
+      border:1px solid var(--red); padding:16px 18px; margin-top:20px;
+      font-size:13px;
+    }
+
+    /* ---------- Project Info page ---------- */
+    .project-picker{
+      display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px;
+    }
+    .project-picker button{
+      font-family:'Inter',sans-serif;
+      font-size:13.5px;
+      font-weight:600;
+      background:var(--surface);
+      color:var(--ink);
+      border:1px solid var(--line);
+      padding:10px 18px;
+      cursor:pointer;
+    }
+    .project-picker button.active{
+      background:var(--brick);
+      color:#fff;
+      border-color:var(--brick);
+    }
+
+    .info-header{margin-bottom:22px;}
+    .info-header h2{font-size:24px;}
+    .info-header .loc{color:var(--ink-soft); font-size:13px; margin-top:3px;}
+
+    .quick-facts{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:1px;
+      background:var(--line);
+      border:1px solid var(--line);
+      margin-bottom:34px;
+    }
+    .quick-facts .fact{background:var(--surface); padding:14px 16px;}
+    .quick-facts .fact .k{font-size:11px; color:var(--ink-soft); margin-bottom:4px;}
+    .quick-facts .fact .v{font-size:14px; font-weight:600;}
+
+    .amenity-grid{
+      display:flex; flex-wrap:wrap; gap:8px;
+      margin-bottom:34px;
+    }
+    .amenity-chip{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-left:3px solid var(--green);
+      padding:8px 14px;
+      font-size:13px;
+      font-weight:500;
+    }
+
+    .landmarks-table{
+      width:100%;
+      border-collapse:collapse;
+      background:var(--surface);
+      border:1px solid var(--line);
+      margin-bottom:34px;
+      font-size:13px;
+    }
+    .landmarks-table th{
+      text-align:left; background:var(--paper-deep); font-weight:600;
+      font-size:11.5px; padding:8px 12px;
+    }
+    .landmarks-table td{padding:7px 12px; border-top:1px solid var(--paper-deep);}
+    .landmarks-table td.num{text-align:right; font-variant-numeric:tabular-nums;}
+
+    .fab-list{display:flex; flex-direction:column; gap:12px;}
+    .fab-card{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-left:4px solid var(--line);
+      padding:16px 20px;
+    }
+    .fab-card.top3{border-left-color:var(--brick);}
+    .fab-card .fab-top{
+      display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+      margin-bottom:8px;
+    }
+    .fab-card h4{
+      font-family:'Source Serif 4',serif;
+      font-size:16px; font-weight:600; margin:0;
+    }
+    .fab-card .advantage{
+      font-size:13px; color:var(--brick-deep); font-weight:600; margin-bottom:8px;
+    }
+    .fab-card .benefit{font-size:13.5px; color:var(--ink); margin-bottom:10px; white-space:pre-line;}
+    .fab-card .meta{
+      display:flex; flex-wrap:wrap; gap:16px; font-size:12px; color:var(--ink-soft);
+    }
+    .fab-card .meta strong{color:var(--ink); font-weight:600;}
+    .badge-top3{
+      background:var(--brick); color:#fff; font-size:10.5px; font-weight:700;
+      padding:3px 9px; border-radius:20px; white-space:nowrap;
+    }
+
+    /* ---------- Unit detail modal ---------- */
+    .modal-overlay{
+      display:none;
+      position:fixed; inset:0;
+      background:rgba(24,34,52,.45);
+      z-index:100;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    }
+    .modal-overlay.open{display:flex;}
+    .modal-box{
+      background:var(--surface);
+      border:1px solid var(--line);
+      max-width:560px;
+      width:100%;
+      max-height:85vh;
+      overflow-y:auto;
+      box-shadow:0 12px 40px rgba(24,34,52,.25);
+    }
+    .modal-head{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:16px 20px;
+      border-bottom:2px solid var(--ink);
+      position:sticky; top:0; background:var(--surface);
+    }
+    .modal-head h3{font-size:18px;}
+    .modal-close{
+      background:none; border:none; cursor:pointer;
+      font-size:20px; line-height:1; color:var(--ink-soft);
+      padding:2px 6px;
+    }
+    .modal-close:hover{color:var(--ink);}
+    .modal-body{padding:14px 20px 20px;}
+    .modal-row{
+      display:flex; justify-content:space-between; gap:16px;
+      padding:9px 0;
+      border-bottom:1px solid var(--paper-deep);
+      font-size:13.5px;
+    }
+    .modal-row:last-child{border-bottom:none;}
+    .modal-row .mk{color:var(--ink-soft); flex:0 0 46%;}
+    .modal-row .mv{font-weight:600; text-align:right; flex:1;}
+
+    @media (max-width:1000px){
+      .kpis{grid-template-columns:repeat(3,1fr);}
+    }
+    @media (max-width:640px){
+      .kpis{grid-template-columns:repeat(2,1fr);}
+      .wrap{padding:18px 14px 40px;}
+    }
+  </style>
+
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Signature Group</h1>
+        <div class="sub" id="subhead">Loading live data from the Master Database…</div>
+      </div>
+      <div class="topbar-right">
+        <div class="refreshed">
+          <span id="refreshedAt">—</span>
+        </div>
+        <button class="refresh" id="refreshBtn" onclick="loadData()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button id="navOverview" class="active" onclick="showPage('overview')">Overview</button>
+      <button id="navProjectInfo" onclick="showPage('projectInfo')">Project Info</button>
+    </div>
+
+    <div id="app">
+      <div class="loading-screen" id="loadingScreen">
+        <div class="spin-lg"></div>
+        <div>Reading MASTER DATABASE and PROJECT MASTER…</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  var allUnits = [];
+  var projectMaster = {};
+  var projectDetails = {};
+  var sortState = { key: null, dir: 1 };
+  var currentProject = null;
+  var renderedRows = [];
+
+  async function loadData(){
+    var btn = document.getElementById('refreshBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Refreshing';
+    }
+
+    try {
+      const res = await fetch('/api/inventory', { cache: 'no-store' });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload && payload.error ? payload.error : ('HTTP ' + res.status));
+      onData(payload);
+    } catch (err) {
+      onError(err);
+    }
+  }
+
+  function onError(err){
+    var app = document.getElementById('app');
+    if (app) {
+      app.innerHTML =
+        '<div class="error-box"><strong>Could not load data.</strong><br>' +
+        esc(err && err.message ? err.message : err) +
+        '<br><br>Check that the API is working: <code>/api/inventory</code>, and that sheet tabs ' +
+        '"MASTER DATABASE" and "PROJECT MASTER" match exactly.</div>';
+    }
+    resetRefreshBtn();
+  }
+
+  function resetRefreshBtn(){
+    var b = document.getElementById('refreshBtn');
+    if (b) {
+      b.disabled = false;
+      b.innerHTML = 'Refresh';
+    }
+  }
+
+  function onData(payload){
+    try {
+      allUnits = payload.units || [];
+      projectMaster = payload.projectMaster || {};
+      projectDetails = payload.projectDetails || {};
+      
+      var subhead = document.getElementById('subhead');
+      if (subhead) {
+        subhead.textContent = allUnits.length + ' units across ' + uniq(allUnits, 'project').length + ' projects';
+      }
+      var refreshedAt = document.getElementById('refreshedAt');
+      if (refreshedAt) {
+        refreshedAt.textContent = 'Updated ' + (payload.generatedAt ? new Date(payload.generatedAt).toLocaleString() : new Date().toLocaleString());
+      }
+      resetRefreshBtn();
+      renderShell();
+      populateFilters();
+      render();
+      renderProjectPicker();
+      if (!currentProject) currentProject = uniq(allUnits, 'project')[0] || Object.keys(projectMaster)[0];
+      renderProjectInfo();
+    } catch (err) {
+      console.error('Error rendering inventory:', err);
+      onError(err);
+    }
+  }
+
+  /* ---------------- nav ---------------- */
+  function showPage(name){
+    document.getElementById('navOverview').classList.toggle('active', name === 'overview');
+    document.getElementById('navProjectInfo').classList.toggle('active', name === 'projectInfo');
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+    var el = document.getElementById('page-' + name);
+    if (el) el.classList.add('active');
+  }
+
+  /* ---------------- helpers ---------------- */
+  function uniq(arr, key){
+    var seen = {}, out = [];
+    (arr || []).forEach(function(o){
+      var v = o[key];
+      if (v !== null && v !== undefined && v !== '' && !seen[v]) { seen[v] = true; out.push(v); }
+    });
+    out.sort();
+    return out;
+  }
+
+  function statusBadge(status){
+    var s = String(status || '').toLowerCase();
+    var cls = 'badge-other';
+    if (s === 'available') cls = 'badge-available';
+    else if (s === 'sold') cls = 'badge-sold';
+    else if (s === 'hold') cls = 'badge-hold';
+    return '<span class="badge ' + cls + '">' + esc(status || 'Unknown') + '</span>';
+  }
+
+  function esc(s){
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  function formatRate(u){
+    var raw = u.rateRaw ? String(u.rateRaw) : '';
+    if (!raw) return u.rate ? u.rate.toLocaleString('en-IN') : '—';
+    var m = raw.match(/-?[\d,]+(\.\d+)?/);
+    if (!m) return raw;
+    var before = raw.slice(0, m.index).trim();
+    var after = raw.slice(m.index + m[0].length).trim();
+    var num = u.rate ? u.rate.toLocaleString('en-IN') : m[0];
+    return [before, num, after].filter(Boolean).join(' ');
+  }
+
+  /* ================= OVERVIEW PAGE ================= */
+
+  function renderShell(){
+    document.getElementById('app').innerHTML =
+      '<div id="page-overview" class="page active">' +
+        '<div class="kpis" id="kpiRow"></div>' +
+        '<div class="section-head"><h2>Unit inventory</h2></div>' +
+        '<div class="filters">' +
+          '<select id="fProject"><option value="">All projects</option></select>' +
+          '<select id="fStatus"><option value="">All statuses</option></select>' +
+          '<select id="fType"><option value="">All unit types</option></select>' +
+          '<select id="fFacing"><option value="">All facings</option></select>' +
+          '<select id="fCorner"><option value="">Corner: All</option></select>' +
+          '<select id="fGarden"><option value="">Garden: All</option></select>' +
+          '<input type="text" id="fSearch" placeholder="Search unit code, unit no, block, location…">' +
+          '<button class="clear" onclick="clearFilters()">Clear filters</button>' +
+          '<button class="btn-pdf" id="pdfBtn" onclick="downloadInventoryPdf()">Download PDF</button>' +
+        '</div>' +
+        '<div class="result-count" id="resultCount"></div>' +
+        '<div class="table-scroll">' +
+          '<table>' +
+            '<thead><tr id="tableHead"></tr></thead>' +
+            '<tbody id="tableBody"></tbody>' +
+          '</table>' +
+        '</div>' +
+        '<div class="section-head"><h2>Projects</h2></div>' +
+        '<div class="projects" id="projectCards"></div>' +
+      '</div>' +
+      '<div id="page-projectInfo" class="page">' +
+        '<div class="project-picker" id="projectPicker"></div>' +
+        '<div id="projectInfoBody"></div>' +
+      '</div>' +
+      '<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this) closeUnitModal();">' +
+        '<div class="modal-box">' +
+          '<div class="modal-head">' +
+            '<h3 id="modalTitle">Unit</h3>' +
+            '<button class="modal-close" onclick="closeUnitModal()">&times;</button>' +
+          '</div>' +
+          '<div class="modal-body" id="modalBody"></div>' +
+        '</div>' +
+      '</div>';
+
+    var cols = [
+      { key:'unitCode', label:'Unit code' },
+      { key:'unitNo', label:'Unit no' },
+      { key:'project', label:'Project' },
+      { key:'location', label:'Location' },
+      { key:'block', label:'Block' },
+      { key:'unitType', label:'Type' },
+      { key:'floor', label:'Floor' },
+      { key:'facing', label:'Facing' },
+      { key:'corner', label:'Corner' },
+      { key:'garden', label:'Garden' },
+      { key:'area', label:'Area (sq.ft)', num:true },
+      { key:'status', label:'Status' },
+      { key:'rate', label:'Rate (₹/sq.ft)', num:true },
+      { key:'mapsLink', label:'Map' }
+    ];
+    var head = document.getElementById('tableHead');
+    if (head) {
+      head.innerHTML = cols.map(function(c){
+        var cls = c.key === 'block' ? ' class="col-block"' : c.key === 'floor' ? ' class="col-floor"' : '';
+        return '<th' + cls + ' data-key="' + c.key + '" onclick="sortBy(this.getAttribute(\'data-key\'))">' + esc(c.label) + '<span class="arrow" id="arrow-' + c.key + '"></span></th>';
+      }).join('');
+    }
+
+    ['fProject','fStatus','fType','fFacing','fCorner','fGarden'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', render);
+    });
+    var search = document.getElementById('fSearch');
+    if (search) search.addEventListener('input', render);
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') closeUnitModal();
+    });
+  }
+
+  function populateFilters(){
+    fillSelect('fProject', uniq(allUnits, 'project'));
+    fillSelect('fStatus', uniq(allUnits, 'status'));
+    fillSelect('fType', uniq(allUnits, 'unitType'));
+    fillSelect('fFacing', uniq(allUnits, 'facing'));
+    fillSelect('fCorner', uniq(allUnits, 'corner'));
+    fillSelect('fGarden', uniq(allUnits, 'garden'));
+  }
+
+  function fillSelect(id, values){
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var current = sel.value;
+    sel.innerHTML = sel.options[0].outerHTML +
+      values.map(function(v){ return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+    sel.value = current;
+  }
+
+  function clearFilters(){
+    ['fProject','fStatus','fType','fFacing','fCorner','fGarden','fSearch'].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    render();
+  }
+
+  function getFiltered(){
+    var p = (document.getElementById('fProject') || {}).value || '';
+    var s = (document.getElementById('fStatus') || {}).value || '';
+    var t = (document.getElementById('fType') || {}).value || '';
+    var f = (document.getElementById('fFacing') || {}).value || '';
+    var c = (document.getElementById('fCorner') || {}).value || '';
+    var g = (document.getElementById('fGarden') || {}).value || '';
+    var q = ((document.getElementById('fSearch') || {}).value || '').trim().toLowerCase();
+
+    return allUnits.filter(function(u){
+      if (p && String(u.project) !== p) return false;
+      if (s && String(u.status) !== s) return false;
+      if (t && String(u.unitType) !== t) return false;
+      if (f && String(u.facing) !== f) return false;
+      if (c && String(u.corner) !== c) return false;
+      if (g && String(u.garden) !== g) return false;
+      if (q){
+        var hay = [u.unitCode,u.unitNo,u.block,u.location].join(' ').toLowerCase();
+        if (hay.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function render(){
+    var filtered = getFiltered();
+    renderKPIs(filtered);
+    renderProjectCards();
+    updateBlockColumnVisibility(filtered);
+    updateFloorColumnVisibility(filtered);
+    renderTable(filtered);
+  }
+
+  function updateBlockColumnVisibility(filtered){
+    var blocks = uniq(filtered, 'block');
+    var table = document.querySelector('#page-overview table');
+    if (table) table.classList.toggle('hide-block', blocks.length <= 1);
+  }
+
+  function updateFloorColumnVisibility(filtered){
+    var floors = uniq(filtered, 'floor');
+    var table = document.querySelector('#page-overview table');
+    if (table) table.classList.toggle('hide-floor', floors.length <= 1);
+  }
+
+  function renderKPIs(filtered){
+    var total = filtered.length;
+    var available = filtered.filter(function(u){ return String(u.status || '').toLowerCase() === 'available'; }).length;
+    var sold = filtered.filter(function(u){ return String(u.status || '').toLowerCase() === 'sold'; }).length;
+    var hold = filtered.filter(function(u){ return String(u.status || '').toLowerCase() === 'hold'; }).length;
+    var projects = uniq(filtered, 'project').length;
+
+    var kpis = [
+      { label:'Total units', value: total, cls:'' },
+      { label:'Available', value: available, cls:'accent-green' },
+      { label:'Sold', value: sold, cls:'accent-red' },
+      { label:'Hold', value: hold, cls:'accent-amber' },
+      { label:'Projects', value: projects, cls:'' }
+    ];
+
+    var kpiRow = document.getElementById('kpiRow');
+    if (kpiRow) {
+      kpiRow.innerHTML = kpis.map(function(k){
+        return '<div class="kpi ' + k.cls + '"><div class="label">' + esc(k.label) + '</div>' +
+          '<div class="value">' + k.value.toLocaleString('en-IN') + '</div></div>';
+      }).join('');
+    }
+  }
+
+  function renderProjectCards(){
+    var projects = uniq(allUnits, 'project');
+    var html = projects.map(function(p){
+      var units = allUnits.filter(function(u){ return u.project === p; });
+      var pm = projectMaster[p] || {};
+      return '<div class="project-card">' +
+        '<h3>' + esc(p) + '</h3>' +
+        '<div class="loc">' + esc(pm.location || (units[0] && units[0].location) || '') + '</div>' +
+        (pm.projectType ? '<div class="row"><span class="k">Type</span><span class="v">' + esc(pm.projectType) + '</span></div>' : '') +
+        (pm.landArea ? '<div class="row"><span class="k">Land area</span><span class="v">' + esc(pm.landArea) + '</span></div>' : '') +
+        '<div class="row"><span class="k">Total units</span><span class="v">' + units.length + '</span></div>' +
+        (pm.possession ? '<div class="row"><span class="k">Possession</span><span class="v">' + esc(pm.possession) + '</span></div>' : '') +
+      '</div>';
+    }).join('');
+    var cards = document.getElementById('projectCards');
+    if (cards) cards.innerHTML = html || '<div class="empty-state">No project data found.</div>';
+  }
+
+  function sortBy(key){
+    if (!key) return;
+    if (sortState.key === key) sortState.dir *= -1;
+    else { sortState.key = key; sortState.dir = 1; }
+    document.querySelectorAll('.arrow').forEach(function(el){ el.textContent=''; });
+    var arrow = document.getElementById('arrow-' + key);
+    if (arrow) arrow.textContent = sortState.dir === 1 ? '▲' : '▼';
+    render();
+  }
+
+  function renderTable(filtered){
+    var rows = filtered.slice();
+    if (sortState.key){
+      var k = sortState.key, dir = sortState.dir;
+      rows.sort(function(a,b){
+        var va = a[k], vb = b[k];
+        if (va === null || va === undefined) va = '';
+        if (vb === null || vb === undefined) vb = '';
+        if (typeof va === 'number' && typeof vb === 'number') return (va-vb)*dir;
+        return String(va).localeCompare(String(vb)) * dir;
+      });
+    }
+
+    renderedRows = rows;
+
+    var rc = document.getElementById('resultCount');
+    if (rc) rc.textContent = rows.length + ' of ' + allUnits.length + ' units shown';
+
+    var tb = document.getElementById('tableBody');
+    if (!tb) return;
+
+    if (!rows.length){
+      tb.innerHTML = '<tr><td colspan="14"><div class="empty-state"><h3>No units match these filters</h3>Try clearing a filter or broadening your search.</div></td></tr>';
+      return;
+    }
+
+    tb.innerHTML = rows.map(function(u, i){
+      var cStr = String(u.corner || '').toLowerCase();
+      var gStr = String(u.garden || '').toLowerCase();
+      var ynCorner = u.corner ? ((cStr === 'yes' || u.corner === true) ? '<span class="yn-yes">Yes</span>' : '<span class="yn-no">No</span>') : '';
+      var ynGarden = u.garden ? ((gStr === 'yes' || u.garden === true) ? '<span class="yn-yes">Yes</span>' : '<span class="yn-no">No</span>') : '';
+      var mapCell = u.mapsLink ? '<a class="maps-link" href="' + esc(u.mapsLink) + '" target="_blank" rel="noopener" onclick="event.stopPropagation();">Map ↗</a>' : '—';
+      return '<tr data-index="' + i + '" onclick="openUnitModal(Number(this.getAttribute(\'data-index\')))">' +
+        '<td>' + esc(u.unitCode) + '</td>' +
+        '<td>' + esc(u.unitNo) + '</td>' +
+        '<td>' + esc(u.project) + '</td>' +
+        '<td>' + esc(u.location) + '</td>' +
+        '<td class="col-block">' + esc(u.block) + '</td>' +
+        '<td>' + esc(u.unitType) + '</td>' +
+        '<td class="col-floor">' + esc(u.floor) + '</td>' +
+        '<td>' + esc(u.facing) + '</td>' +
+        '<td>' + ynCorner + '</td>' +
+        '<td>' + ynGarden + '</td>' +
+        '<td class="num">' + (u.area ? u.area.toLocaleString('en-IN') + (u.areaBasis ? ' <small style="color:var(--ink-soft)">(' + esc(u.areaBasis) + ')</small>' : '') : '—') + '</td>' +
+        '<td>' + statusBadge(u.status) + '</td>' +
+        '<td class="num">' + esc(formatRate(u)) + '</td>' +
+        '<td>' + mapCell + '</td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function openUnitModal(i){
+    var u = renderedRows[i];
+    if (!u) return;
+
+    var areaValue = u.area
+      ? (u.area.toLocaleString('en-IN') + (u.areaBasis ? ' sq.ft (' + u.areaBasis + ')' : ' sq.ft'))
+      : '';
+
+    var fields = [
+      { label:'Unit code', value:u.unitCode },
+      { label:'Unit no', value:u.unitNo },
+      { label:'Project', value:u.project },
+      { label:'Location', value:u.location },
+      { label:'Project type', value:u.projectType },
+      { label:'Residential / Commercial', value:u.resCom },
+      { label:'Block', value:u.block },
+      { label:'Unit type', value:u.unitType },
+      { label:'Floor', value:u.floor },
+      { label:'Facing', value:u.facing },
+      { label:'Corner', value:u.corner },
+      { label:'Garden', value:u.garden },
+      { label:'Plot dimension', value:u.plotDim },
+      { label:'Plot area', value: u.plotArea ? u.plotArea.toLocaleString('en-IN') + ' sq.ft' : '' },
+      { label:'Built-up area', value: u.builtup ? u.builtup.toLocaleString('en-IN') + ' sq.ft' : '' },
+      { label:'Super built-up area', value: u.sba ? u.sba.toLocaleString('en-IN') + ' sq.ft' : '' },
+      { label:'Carpet area', value: u.carpet ? u.carpet.toLocaleString('en-IN') + ' sq.ft' : '' },
+      { label:'Area (used for pricing)', value: areaValue },
+      { label:'Status', value:u.status },
+      { label:'Rate (₹/sq.ft)', value: formatRate(u) }
+    ];
+
+    var body = fields
+      .filter(function(f){ return f.value !== null && f.value !== undefined && f.value !== ''; })
+      .map(function(f){
+        return '<div class="modal-row"><div class="mk">' + esc(f.label) + '</div><div class="mv">' + esc(f.value) + '</div></div>';
+      }).join('');
+
+    if (u.mapsLink){
+      body += '<div class="modal-row"><div class="mk">Map</div><div class="mv"><a class="maps-link" href="' + esc(u.mapsLink) + '" target="_blank" rel="noopener">Open in Google Maps ↗</a></div></div>';
+    }
+
+    document.getElementById('modalTitle').textContent = u.unitCode || 'Unit';
+    document.getElementById('modalBody').innerHTML = body || '<div class="empty-state">No further details for this unit.</div>';
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+
+  function closeUnitModal(){
+    var overlay = document.getElementById('modalOverlay');
+    if (overlay) overlay.classList.remove('open');
+  }
+
+  /* ================= PDF EXPORT ================= */
+
+  function getActiveFilterSummary(){
+    var parts = [];
+    var p = (document.getElementById('fProject')||{}).value; if (p) parts.push('Project: ' + p);
+    var s = (document.getElementById('fStatus')||{}).value; if (s) parts.push('Status: ' + s);
+    var t = (document.getElementById('fType')||{}).value; if (t) parts.push('Type: ' + t);
+    var f = (document.getElementById('fFacing')||{}).value; if (f) parts.push('Facing: ' + f);
+    var c = (document.getElementById('fCorner')||{}).value; if (c) parts.push('Corner: ' + c);
+    var g = (document.getElementById('fGarden')||{}).value; if (g) parts.push('Garden: ' + g);
+    var q = ((document.getElementById('fSearch')||{}).value||'').trim(); if (q) parts.push('Search: "' + q + '"');
+    return parts.join('   ·   ');
+  }
+
+  function downloadInventoryPdf(){
+    if (!window.jspdf || !window.jspdf.jsPDF){
+      alert('PDF library is still loading — please try again in a moment.');
+      return;
+    }
+    if (!renderedRows.length){
+      alert('No units match the current filters, so there is nothing to export.');
+      return;
+    }
+
+    var btn = document.getElementById('pdfBtn');
+    if (btn){ btn.disabled = true; btn.textContent = 'Preparing PDF…'; }
+
+    try{
+      var jsPDFCtor = window.jspdf.jsPDF;
+      var doc = new jsPDFCtor({ orientation:'landscape', unit:'pt', format:'a4' });
+      var pageW = doc.internal.pageSize.getWidth();
+      var margin = 40;
+
+      var BRICK = [166,80,58];
+      var INK = [24,34,52];
+      var INK_SOFT = [90,98,112];
+      var LINE = [217,210,193];
+      var PAPER_ROW = [247,243,234];
+      var GREEN = [47,122,77];
+      var RED = [156,59,59];
+      var AMBER = [155,113,38];
+
+      var dateStr = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+      var timeStr = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+      var filterSummary = getActiveFilterSummary();
+
+      doc.setFillColor(BRICK[0],BRICK[1],BRICK[2]);
+      doc.rect(0, 0, pageW, 62, 'F');
+
+      doc.setTextColor(255,255,255);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(19);
+      doc.text('SIGNATURE GROUP', margin, 28);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.text('Unit Inventory Report', margin, 45);
+
+      doc.setFontSize(9);
+      doc.text('Generated ' + dateStr + '  ·  ' + timeStr, pageW - margin, 27, { align:'right' });
+      doc.text(renderedRows.length + ' of ' + allUnits.length + ' units', pageW - margin, 42, { align:'right' });
+
+      var y = 88;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(INK[0],INK[1],INK[2]);
+      doc.text('Filters applied', margin, y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(INK_SOFT[0],INK_SOFT[1],INK_SOFT[2]);
+      var filterText = filterSummary || 'None — showing the full inventory';
+      var filterLines = doc.splitTextToSize(filterText, pageW - margin*2 - 90);
+      doc.text(filterLines, margin + 90, y);
+      y += (filterLines.length * 12) + 16;
+
+      var counts = { total: renderedRows.length, available: 0, sold: 0, hold: 0 };
+      renderedRows.forEach(function(u){
+        var s = String(u.status || '').toLowerCase();
+        if (s === 'available') counts.available++;
+        else if (s === 'sold') counts.sold++;
+        else if (s === 'hold') counts.hold++;
+      });
+
+      var chips = [
+        { label:'TOTAL UNITS', value: counts.total, color: INK },
+        { label:'AVAILABLE', value: counts.available, color: GREEN },
+        { label:'SOLD', value: counts.sold, color: RED },
+        { label:'HOLD', value: counts.hold, color: AMBER }
+      ];
+      var chipGap = 12;
+      var chipW = (pageW - margin*2 - chipGap*(chips.length-1)) / chips.length;
+      var chipH = 40;
+
+      chips.forEach(function(c, i){
+        var x = margin + i * (chipW + chipGap);
+        doc.setDrawColor(LINE[0],LINE[1],LINE[2]);
+        doc.setFillColor(255,255,255);
+        doc.roundedRect(x, y, chipW, chipH, 3, 3, 'FD');
+        doc.setFillColor(c.color[0],c.color[1],c.color[2]);
+        doc.rect(x, y, 3.5, chipH, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(INK_SOFT[0],INK_SOFT[1],INK_SOFT[2]);
+        doc.text(c.label, x + 14, y + 15);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(17);
+        doc.setTextColor(c.color[0],c.color[1],c.color[2]);
+        doc.text(String(c.value), x + 14, y + 31);
+      });
+
+      y += chipH + 22;
+
+      var head = [[ 'Unit code','Unit no','Project','Location','Block','Type','Floor','Facing','Corner','Garden','Area (sq.ft)','Status','Rate (₹/sq.ft)' ]];
+      var body = renderedRows.map(function(u){
+        return [
+          u.unitCode || '',
+          u.unitNo || '',
+          u.project || '',
+          u.location || '',
+          u.block || '',
+          u.unitType || '',
+          u.floor || '',
+          u.facing || '',
+          u.corner || '',
+          u.garden || '',
+          u.area ? (u.area.toLocaleString('en-IN') + (u.areaBasis ? ' (' + u.areaBasis + ')' : '')) : '',
+          u.status || '',
+          formatRate(u)
+        ];
+      });
+
+      doc.autoTable({
+        head: head,
+        body: body,
+        startY: y,
+        theme: 'grid',
+        tableLineColor: LINE,
+        tableLineWidth: 0.5,
+        styles: {
+          font: 'helvetica',
+          fontSize: 8,
+          cellPadding: { top:5, bottom:5, left:6, right:6 },
+          lineColor: LINE,
+          lineWidth: 0.5,
+          textColor: INK,
+          valign: 'middle'
+        },
+        headStyles: {
+          fillColor: INK,
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 8.5,
+          halign: 'left'
+        },
+        alternateRowStyles: { fillColor: PAPER_ROW },
+        columnStyles: {
+          6:  { halign:'center' },
+          8:  { halign:'center' },
+          9:  { halign:'center' },
+          10: { halign:'right' },
+          11: { halign:'center' },
+          12: { halign:'right' }
+        },
+        margin: { left: margin, right: margin, top: 46, bottom: 40 },
+        didParseCell: function(data){
+          if (data.section === 'body' && data.column.index === 11){
+            var v = String(data.cell.raw || '').toLowerCase();
+            if (v === 'available'){ data.cell.styles.textColor = GREEN; data.cell.styles.fontStyle = 'bold'; }
+            else if (v === 'sold'){ data.cell.styles.textColor = RED; data.cell.styles.fontStyle = 'bold'; }
+            else if (v === 'hold'){ data.cell.styles.textColor = AMBER; data.cell.styles.fontStyle = 'bold'; }
+          }
+        }
+      });
+
+      var totalPages = doc.internal.getNumberOfPages();
+      for (var i = 1; i <= totalPages; i++){
+        doc.setPage(i);
+
+        if (i > 1){
+          doc.setFillColor(BRICK[0],BRICK[1],BRICK[2]);
+          doc.rect(0, 0, pageW, 30, 'F');
+          doc.setTextColor(255,255,255);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10.5);
+          doc.text('SIGNATURE GROUP — Unit Inventory (contd.)', margin, 19.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          doc.text('Generated ' + dateStr, pageW - margin, 19.5, { align:'right' });
+        }
+
+        var pageH = doc.internal.pageSize.getHeight();
+        doc.setDrawColor(LINE[0],LINE[1],LINE[2]);
+        doc.setLineWidth(0.5);
+        doc.line(margin, pageH - 28, pageW - margin, pageH - 28);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(INK_SOFT[0],INK_SOFT[1],INK_SOFT[2]);
+        doc.text('Signature Group · Confidential inventory export', margin, pageH - 16);
+        doc.text('Page ' + i + ' of ' + totalPages, pageW - margin, pageH - 16, { align:'right' });
+      }
+
+      var fname = 'Signature-Group-Inventory-' + new Date().toISOString().slice(0,10) + '.pdf';
+      doc.save(fname);
+    } finally {
+      if (btn){ btn.disabled = false; btn.textContent = 'Download PDF'; }
+    }
+  }
+
+  /* ================= PROJECT INFO PAGE ================= */
+
+  function renderProjectPicker(){
+    var names = Object.keys(projectMaster);
+    if (!names.length) names = uniq(allUnits, 'project');
+    var picker = document.getElementById('projectPicker');
+    if (picker) {
+      picker.innerHTML = names.map(function(n){
+        return '<button data-name="' + esc(n) + '" onclick="selectProject(this.getAttribute(\'data-name\'))">' + esc(n) + '</button>';
+      }).join('');
+    }
+  }
+
+  function selectProject(name){
+    currentProject = name;
+    renderProjectInfo();
+  }
+
+  function getPlotSizeForProject(projectName){
+    var units = allUnits.filter(function(u){ return u.project === projectName; });
+    var areas = units.map(function(u){ return u.plotArea; }).filter(function(a){ return a; });
+    if (areas.length){
+      var min = Math.min.apply(null, areas);
+      var max = Math.max.apply(null, areas);
+      return (min === max ? String(min) : (min + ' – ' + max)) + ' sq.ft';
+    }
+    return '';
+  }
+
+  function renderProjectInfo(){
+    document.querySelectorAll('#projectPicker button').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-name') === currentProject);
+    });
+
+    var pm = projectMaster[currentProject] || {};
+    var pd = projectDetails[currentProject] || {};
+    var body = document.getElementById('projectInfoBody');
+    if (!body) return;
+
+    if (!currentProject){
+      body.innerHTML = '<div class="empty-state"><h3>No project selected</h3></div>';
+      return;
+    }
+
+    var html = '';
+
+    html += '<div class="info-header">' +
+      '<h2>' + esc(currentProject) + '</h2>' +
+      '<div class="loc">' + esc(pm.location || '') + '</div>' +
+    '</div>';
+
+    var isHeritage = /heritage/i.test(String(currentProject || ''));
+    var facts = [];
+    if (pm.projectType) facts.push({ label:'Project type', value: pm.projectType });
+    if (pm.resCom) facts.push({ label:'Residential / Commercial', value: pm.resCom });
+    if (pm.landArea) facts.push({ label:'Total land area', value: pm.landArea });
+
+    if (isHeritage) {
+      var plotSize = getPlotSizeForProject(currentProject);
+      if (plotSize) facts.push({ label:'Plot size', value: plotSize });
+    } else if (pm.builtup) {
+      facts.push({ label:'Total built-up area', value: pm.builtup });
+    }
+
+    if (pm.flats) facts.push({ label:'Total flats', value: pm.flats });
+    if (pm.shops) facts.push({ label:'Total shops', value: pm.shops });
+    if (pm.plots) facts.push({ label:'Total plots', value: pm.plots });
+    if (pm.possession) facts.push({ label:'Possession', value: pm.possession });
+    if (!facts.length && pd.quickFacts) facts = pd.quickFacts;
+
+    if (facts.length){
+      html += '<div class="quick-facts">' + facts.map(function(f){
+        return '<div class="fact"><div class="k">' + esc(f.label) + '</div><div class="v">' + esc(f.value) + '</div></div>';
+      }).join('') + '</div>';
+    }
+
+    html += '<div class="section-head"><h2>Amenities</h2></div>';
+    if (pd.amenities && pd.amenities.length){
+      html += '<div class="amenity-grid">' + pd.amenities.map(function(a){
+        return '<div class="amenity-chip">' + esc(a) + '</div>';
+      }).join('') + '</div>';
+    } else {
+      html += '<div class="empty-state">No amenities listed for this project yet.</div>';
+    }
+
+    html += '<div class="section-head"><h2>Nearby landmarks</h2></div>';
+    if (pd.landmarks && pd.landmarks.length){
+      html += '<table class="landmarks-table"><thead><tr><th>Landmark</th><th style="text-align:right;">Approx. distance</th></tr></thead><tbody>' +
+        pd.landmarks.map(function(l){
+          return '<tr><td>' + esc(l.name) + '</td><td class="num">' + (l.distanceKm !== null ? l.distanceKm + ' km' : '—') + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    } else {
+      html += '<div class="empty-state">No landmark distances listed for this project yet.</div>';
+    }
+
+    html += '<div class="section-head"><h2>Location advantages</h2><div class="note">Feature → Advantage → Benefit, as documented for this project</div></div>';
+    if (pd.fab && pd.fab.length){
+      html += '<div class="fab-list">' + pd.fab.map(function(f){
+        return '<div class="fab-card ' + (f.top3 ? 'top3' : '') + '">' +
+          '<div class="fab-top"><h4>' + esc(f.feature) + '</h4>' + (f.top3 ? '<span class="badge-top3">Top 3</span>' : '') + '</div>' +
+          (f.advantage ? '<div class="advantage">' + esc(f.advantage) + '</div>' : '') +
+          (f.benefit ? '<div class="benefit">' + esc(f.benefit) + '</div>' : '') +
+          '<div class="meta">' +
+            (f.proof ? '<span><strong>Specifics:</strong> ' + esc(f.proof) + '</span>' : '') +
+            (f.situations ? '<span><strong>Best for:</strong> ' + esc(f.situations) + '</span>' : '') +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+    } else {
+      html += '<div class="empty-state">No location advantages documented for this project yet.</div>';
+    }
+
+    body.innerHTML = html;
+  }
+
+  // Safe DOM startup execution
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadData);
+  } else {
+    loadData();
+  }
+</script>
+</body>
+</html>
