@@ -94,7 +94,7 @@ export default function LoginPage() {
       <div className="login-container">
         <div className="login-header">
           <div className="logo-icon">🏢</div>
-          <h1>Channel Partner CRM</h1>
+          <h1>Signature Group CP CRM</h1>
           <p>Sign in to your account</p>
         </div>
 

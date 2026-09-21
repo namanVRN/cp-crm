@@ -15,6 +15,7 @@ function phoneMatches(a, b) {
   return Boolean(n1 && n2 && n1 === n2);
 }
 
+// Helper to parse "dd/mm/yyyy HH:mm" to Date
 function parseFollowDate(str) {
   if (!str) return null;
   const m = String(str).match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/);
@@ -25,29 +26,40 @@ function parseFollowDate(str) {
 export async function POST(request, { params }) {
   try {
     const session = await requireAuth(request);
+    
+    // In Next.js 15/16, params must be awaited
     const { id } = await params;
 
     const sheets = getSheetsClient();
     const ssid = process.env.SPREADSHEET_ID;
     const found = await findLeadRow(sheets, ssid, id);
-    if (!found) return NextResponse.json({ success: false, message: 'Lead not found!' }, { status: 404 });
+    
+    if (!found) {
+      return NextResponse.json({ success: false, message: 'Lead not found!' }, { status: 404 });
+    }
+    
     const { row } = found;
 
+    // Authorization: only assigned CP or Admin
     if (session.role !== 'Admin' && !phoneMatches(row[7], session.userNumber)) {
       return NextResponse.json({ success: false, message: 'Unauthorized!' }, { status: 403 });
     }
 
+    // Check if follow-up date exists
     const followDateStr = row[10] || '';
     if (!followDateStr) {
       return NextResponse.json({ success: false, message: 'No follow-up date set for this lead.' }, { status: 400 });
     }
+
     const eventStart = parseFollowDate(followDateStr);
     if (!eventStart) {
       return NextResponse.json({ success: false, message: 'Invalid follow-up date format.' }, { status: 400 });
     }
 
+    // Get Calendar client for the CP
     const cpNumber = session.userNumber;
     const calendar = await getCalendarClientForCP(cpNumber);
+    
     if (!calendar) {
       return NextResponse.json(
         { success: false, message: 'CP has not connected their Google Calendar. Please connect first.' },
@@ -55,7 +67,9 @@ export async function POST(request, { params }) {
       );
     }
 
-    const eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000); // 1 hour
+    // Build the event (1 hour duration)
+    const eventEnd = new Date(eventStart.getTime() + 60 * 60 * 1000); 
+    
     const event = {
       summary: `Follow-up with ${row[1] || 'Lead'}`,
       description: `Lead ID: ${id}\nCustomer: ${row[1] || ''}\nPhone: ${row[2] || ''}\nProject: ${row[4] || ''}\nRemark: ${row[12] || 'None'}`,
@@ -69,6 +83,7 @@ export async function POST(request, { params }) {
       },
     };
 
+    // Insert into Google Calendar
     const response = await calendar.events.insert({
       calendarId: 'primary',
       requestBody: event,
@@ -78,9 +93,10 @@ export async function POST(request, { params }) {
 
     return NextResponse.json({
       success: true,
-      message: 'Calendar event created!',
+      message: 'Calendar event created successfully!',
       eventLink: response.data.htmlLink,
     });
+
   } catch (error) {
     console.error('Sync calendar error:', error);
     return NextResponse.json(
