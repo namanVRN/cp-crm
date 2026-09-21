@@ -8,7 +8,6 @@ async function upsertRefreshToken(cpNumber, refreshToken, email) {
   const spreadsheetId = process.env.SPREADSHEET_ID;
   const tabName = 'CP_TOKENS';
 
-  // 1. Find if cpNumber already exists
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: `${tabName}!A:A`,
@@ -17,7 +16,7 @@ async function upsertRefreshToken(cpNumber, refreshToken, email) {
   let rowIndex = -1;
   for (let i = 0; i < rows.length; i++) {
     if (rows[i][0] === cpNumber) {
-      rowIndex = i + 1; // 1-based row index
+      rowIndex = i + 1;
       break;
     }
   }
@@ -26,7 +25,6 @@ async function upsertRefreshToken(cpNumber, refreshToken, email) {
   const values = [[cpNumber, refreshToken, email || '', now]];
 
   if (rowIndex === -1) {
-    // Append new row
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: `${tabName}!A:D`,
@@ -34,7 +32,6 @@ async function upsertRefreshToken(cpNumber, refreshToken, email) {
       requestBody: { values },
     });
   } else {
-    // Update existing row
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: `${tabName}!A${rowIndex}:D${rowIndex}`,
@@ -43,7 +40,7 @@ async function upsertRefreshToken(cpNumber, refreshToken, email) {
     });
   }
 }
-// ------------------------------------------------
+// ----------------------------------------------------------
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -51,7 +48,6 @@ export async function GET(request) {
   const error = searchParams.get('error');
   const cpNumber = searchParams.get('state');
 
-  // ---- Handle errors from Google ----
   if (error) {
     console.error('OAuth error from Google:', error);
     const redirectUrl = new URL('/', request.url);
@@ -66,14 +62,23 @@ export async function GET(request) {
 
   try {
     const oauth2Client = getCalendarOAuthClient();
-    const { tokens } = await oauth2Client.getToken(code);
+    
+    // ✅ DYNAMIC FIX: Automatically detect localhost or Vercel
+    const url = new URL(request.url);
+    const redirectUri = `${url.protocol}//${url.host}/api/auth/callback`;
+
+    // Exchange code with the exact same dynamic redirect URI
+    const { tokens } = await oauth2Client.getToken({
+      code,
+      redirect_uri: redirectUri
+    });
+    
     oauth2Client.setCredentials(tokens);
 
-    // ---- Get user's email (robust) ----
+    // Get user's email
     let email = '';
     try {
       if (tokens.id_token) {
-        // Use ID token if available
         const ticket = await oauth2Client.verifyIdToken({
           idToken: tokens.id_token,
           audience: process.env.GOOGLE_CLIENT_ID,
@@ -81,25 +86,23 @@ export async function GET(request) {
         const payload = ticket.getPayload();
         email = payload.email || '';
       } else if (tokens.access_token) {
-        // Fallback: call userinfo endpoint (only if we have an access token)
         const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
         const userinfo = await oauth2.userinfo.get();
         email = userinfo.data.email || '';
       }
     } catch (emailError) {
-      // Email is optional; log but continue
       console.warn('Could not retrieve user email:', emailError.message);
     }
 
-    // ---- Save refresh token (if provided) ----
+    // Save refresh token
     if (tokens.refresh_token) {
       await upsertRefreshToken(cpNumber, tokens.refresh_token, email);
       console.log(`✅ Refresh token saved for CP ${cpNumber}`);
     } else {
-      console.warn(`⚠️ No refresh_token received for CP ${cpNumber} – consent may need to be re‑granted.`);
+      console.warn(`⚠️ No refresh_token received for CP ${cpNumber}`);
     }
 
-    // ---- Redirect to dashboard with success ----
+    // Redirect to dashboard with success
     const redirectUrl = new URL('/', request.url);
     redirectUrl.searchParams.set('calendar', 'success');
     return NextResponse.redirect(redirectUrl);
