@@ -328,11 +328,23 @@
       gap:1px;
       background:var(--line);
       border:1px solid var(--line);
-      margin-bottom:34px;
+      margin-bottom:16px;
     }
     .quick-facts .fact{background:var(--surface); padding:14px 16px;}
     .quick-facts .fact .k{font-size:11px; color:var(--ink-soft); margin-bottom:4px;}
     .quick-facts .fact .v{font-size:14px; font-weight:600;}
+    
+    .charges-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--amber);
+      padding: 16px 20px;
+      margin-bottom: 34px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--ink);
+    }
+    .charges-card strong { color: var(--ink); display: block; margin-bottom: 6px; font-size: 14px; }
 
     /* Media Buttons and Video Player */
     .media-actions {
@@ -1306,6 +1318,14 @@
       html += '<div class="quick-facts">' + facts.map(function(f){
         return '<div class="fact"><div class="k">' + esc(f.label) + '</div><div class="v">' + esc(f.value) + '</div></div>';
       }).join('') + '</div>';
+    }
+
+    // Additional Charges display right below quick facts
+    if (pm.additionalCharges) {
+      html += '<div class="charges-card">' +
+        '<strong>Additional Charges</strong>' +
+        esc(pm.additionalCharges) +
+      '</div>';
     }
 
     // Media (Brochure and Videos) rendering handling labeled multiples
